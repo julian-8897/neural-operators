@@ -24,7 +24,6 @@ def get_darcy_flow_dataloaders(config, eval_resolution: int | None = None):
         test_resolutions=config.test_resolutions,
     )
 
-
     return train_loader, test_loaders, data_processor
 
 
@@ -43,7 +42,7 @@ def visualize_sample(
     """
 
     # Decode if processor is provided and has decode method
-    if data_processor is not None and hasattr(data_processor, 'decode'):
+    if data_processor is not None and hasattr(data_processor, "decode"):
         input_tensor = data_processor.decode(input_tensor)
         output_tensor = data_processor.decode(output_tensor)
         if prediction is not None:
