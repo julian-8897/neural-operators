@@ -1,9 +1,10 @@
 """Data loading utilities for 2D Darcy Flow."""
 
-from neuralop.datasets import load_darcy_flow_small
+import matplotlib.pyplot as plt
+from neuralop.data.datasets import load_darcy_flow_small
 
 
-def get_darcy_flow_dataloaders(config):
+def get_darcy_flow_dataloaders(config, eval_resolution: int | None = None):
     """
     Load Darcy Flow dataset using neuraloperator's built-in dataset.
 
@@ -20,19 +21,11 @@ def get_darcy_flow_dataloaders(config):
         n_tests=[config.test_samples],
         batch_size=config.batch_size,
         test_batch_sizes=[config.test_batch_size],
-        test_resolutions=[config.train_resolution],
-        grid_boundaries=config.grid_boundaries,
-        positional_encoding=True,
-        encode_input=True,
-        encode_output=True,
-        num_workers=0,  # Set to 0 for Mac compatibility
-        persistent_workers=False,
+        test_resolutions=config.test_resolutions,
     )
 
-    # test_loaders is a dict with resolution as key
-    test_loader = test_loaders[config.train_resolution]
 
-    return train_loader, test_loader, data_processor
+    return train_loader, test_loaders, data_processor
 
 
 def visualize_sample(
@@ -45,21 +38,20 @@ def visualize_sample(
         input_tensor: Input permeability field
         output_tensor: Ground truth solution
         prediction: Model prediction (optional)
-        data_processor: Data processor for denormalization
+        data_processor: Data processor for denormalization (optional)
         save_path: Path to save the figure
     """
-    import matplotlib.pyplot as plt
 
-    # Decode if processor is provided
-    if data_processor is not None:
+    # Decode if processor is provided and has decode method
+    if data_processor is not None and hasattr(data_processor, 'decode'):
         input_tensor = data_processor.decode(input_tensor)
         output_tensor = data_processor.decode(output_tensor)
         if prediction is not None:
             prediction = data_processor.decode(prediction)
 
     # Move to CPU and convert to numpy
-    input_np = input_tensor.squeeze().cpu().numpy()
-    output_np = output_tensor.squeeze().cpu().numpy()
+    input_np = input_tensor.squeeze().cpu().detach().numpy()
+    output_np = output_tensor.squeeze().cpu().detach().numpy()
 
     n_plots = 3 if prediction is not None else 2
     fig, axes = plt.subplots(1, n_plots, figsize=(5 * n_plots, 4))
@@ -78,7 +70,7 @@ def visualize_sample(
 
     # Prediction
     if prediction is not None:
-        pred_np = prediction.squeeze().cpu().numpy()
+        pred_np = prediction.squeeze().cpu().detach().numpy()
         im2 = axes[2].imshow(pred_np, cmap="coolwarm")
         axes[2].set_title("Prediction: Pressure Field")
         axes[2].axis("off")

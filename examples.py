@@ -14,11 +14,11 @@ def quick_example():
     config.test_samples = 20
     config.log_interval = 2
 
-    model, history, data_processor = train_darcy_flow(config)
+    trainer, data_processor = train_darcy_flow(config)
 
     print("\n✅ Quick example completed!")
-    print(f"Final train loss: {history['train_loss'][-1]:.6f}")
-    print(f"Final test loss: {history['test_loss'][-1]:.6f}")
+    print(f"Model trained for {trainer.n_epochs} epochs")
+    print("Training history available in: trainer.losses")
 
 
 def custom_config_example():
@@ -40,9 +40,10 @@ def custom_config_example():
     # Loss function
     config.loss_type = "h1"  # Use H1 loss instead of L2
 
-    model, history, data_processor = train_darcy_flow(config)
+    trainer, data_processor = train_darcy_flow(config)
 
     print("\n✅ Custom training completed!")
+    print("Best model saved to: checkpoints/best_model.pt")
 
 
 if __name__ == "__main__":

@@ -16,10 +16,14 @@ def main():
     # config.learning_rate = 5e-4
     # config.batch_size = 32
 
-    # Train the model
-    model, history, data_processor = train_darcy_flow(config)
+    # Train the model using neuralop's Trainer
+    trainer, data_processor = train_darcy_flow(config)
 
-    print("\n✅ Training completed successfully!")
+    print(
+        "\n✅ Training completed successfully!"
+        "\nAccess model: trainer.model"
+        "\nTraining history: trainer.losses"
+    )
 
 
 if __name__ == "__main__":

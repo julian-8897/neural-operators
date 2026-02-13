@@ -1,6 +1,6 @@
 # Neural Operators for 2D Darcy Flow
 
-A complete implementation of Fourier Neural Operators (FNO) for solving the 2D Darcy Flow equation using PyTorch and the neuraloperator library.
+A complete implementation using **neuraloperator library's built-in Trainer class** for solving the 2D Darcy Flow equation with Fourier Neural Operators (FNO).
 
 ## Overview
 
@@ -14,12 +14,12 @@ u(x) = 0  on ∂Ω
 
 ## Features
 
-- ✅ Fourier Neural Operator (FNO) implementation
-- ✅ Built-in Darcy Flow dataset from neuraloperator library (no external downloads needed)
-- ✅ Relative L² and H¹ loss functions
-- ✅ Configurable hyperparameters
-- ✅ Training with learning rate scheduling
+- ✅ **Uses neuraloperator's built-in Trainer class** - simplified training pipeline
+- ✅ **Built-in loss functions** from neuralop.losses (LpLoss, H1Loss)
+- ✅ Fourier Neural Operator (FNO) from neuralop.models
+- ✅ Built-in Darcy Flow dataset (no external downloads needed)
 - ✅ Automatic checkpointing and logging
+- ✅ Configurable hyperparameters
 - ✅ Visualization of predictions
 
 ## Project Structure
@@ -30,9 +30,10 @@ neural-operators/
 │   ├── __init__.py          # Package initialization
 │   ├── config.py            # Configuration and hyperparameters
 │   ├── data_loader.py       # Data loading and visualization
-│   ├── model.py             # FNO model and loss functions
-│   └── train.py             # Training loop and evaluation
+│   ├── model.py             # FNO model creation and loss selection
+│   └── train.py             # Training with neuralop.Trainer
 ├── main.py                  # Main entry point
+├── examples.py              # Example scripts
 ├── pyproject.toml           # Project dependencies
 └── README.md                # This file
 ```
@@ -88,8 +89,12 @@ config.batch_size = 32
 config.n_modes = (16, 16)
 config.hidden_channels = 128
 
-# Train
-model, history, data_processor = train_darcy_flow(config)
+# Train using neuralop's Trainer
+trainer, data_processor = train_darcy_flow(config)
+
+# Access the trained model and history
+model = trainer.model
+training_losses = trainer.losses
 ```
 
 ## Configuration Options
@@ -183,19 +188,45 @@ Epoch    1/500 | Train Loss: 0.156432 | Test Loss: 0.142156 | LR: 1.00e-03 | Tim
   → Saved best model (test loss: 0.142156)
 Epoch   10/500 | Train Loss: 0.087234 | Test Loss: 0.082341 | LR: 1.00e-03 | Time: 2.31s
 ...
-```
+```Using neuralop's Built-in Components
 
-## Advanced Usage
-
-### Custom Model Training
+The code uses neuraloperator's built-in classes for clean, maintainable code:
 
 ```python
-from src.model import create_fno_model, get_loss_function
-from src.data_loader import get_darcy_flow_dataloaders
+from neuralop.training import Trainer
+from neuralop.losses import LpLoss, H1Loss
+from neuralop.models import FNO
 from src.config import get_default_config
+from src.data_loader import get_darcy_flow_dataloaders
 
 config = get_default_config()
 train_loader, test_loader, data_processor = get_darcy_flow_dataloaders(config)
+
+# Create model
+model = FNO(
+    n_modes=(12, 12),
+    hidden_channels=64,
+    in_channels=3,
+    out_channels=1,
+    n_layers=4
+)
+
+# Create trainer
+trainer = Trainer(
+    model=model,
+    n_epochs=config.epochs,
+    device='cuda',
+    verbose=True
+)
+
+# Train
+trainer.train(
+    train_loader=train_loader,
+    test_loaders={85: test_loader},
+    optimizer=torch.optim.Adam(model.parameters(), lr=1e-3),
+    training_loss=LpLoss(d=2, p=2),
+    eval_losses={'l2': LpLoss(d=2, p=2)}
+)processor = get_darcy_flow_dataloaders(config)
 model = create_fno_model(config)
 criterion = get_loss_function(config)
 
@@ -203,7 +234,16 @@ criterion = get_loss_function(config)
 ```
 
 ### Visualization
+Neuraloperator Documentation**: [Docs](https://neuraloperator.github.io/neuraloperator/)
+- **Darcy Flow**: Classical problem in subsurface flow modeling
 
+## Key Neuraloperator Components Used
+
+- `neuralop.models.FNO`: Fourier Neural Operator model
+- `neuralop.training.Trainer`: Built-in training loop with logging
+- `neuralop.losses.LpLoss`: Relative Lp norm loss
+- `neuralop.losses.H1Loss`: H1 Sobolev norm loss
+- `neuralop.datasets.load_darcy_flow_small`: Built-in Darcy Flow dataset
 ```python
 from src.data_loader import visualize_sample
 
