@@ -97,6 +97,124 @@ model = trainer.model
 training_losses = trainer.losses
 ```
 
+## Model Evaluation
+
+After training, use the evaluation script to comprehensively test your model:
+
+### Basic Evaluation
+
+Evaluate a trained model from checkpoint:
+
+```bash
+uv run python evaluate.py --checkpoint checkpoints/best_model.pt
+```
+
+This will:
+1. Load the model from checkpoint
+2. Run evaluation on the test set
+3. Compute comprehensive metrics (L2 error, MAE, RMSE, R²)
+4. Print detailed results
+5. Save metrics to JSON
+
+### Evaluation with Visualization
+
+Generate prediction visualizations:
+
+```bash
+uv run python evaluate.py --checkpoint checkpoints/best_model.pt --save-viz --n-viz 5
+```
+
+This creates visualizations showing:
+- Input permeability field
+- Ground truth pressure field
+- Model prediction
+- Absolute error map
+
+### Custom Resolution Testing
+
+Test at a different resolution than training:
+
+```bash
+uv run python evaluate.py --checkpoint checkpoints/best_model.pt --resolution 32
+```
+
+### Full Options
+
+```bash
+uv run python evaluate.py \
+    --checkpoint checkpoints/best_model.pt \
+    --resolution 32 \
+    --batch-size 100 \
+    --device cuda \
+    --save-viz \
+    --n-viz 10 \
+    --output-dir my_results
+```
+
+Available arguments:
+- `--checkpoint`: Path to model checkpoint (required)
+- `--resolution`: Test resolution (default: from config)
+- `--batch-size`: Batch size for evaluation (default: 100)
+- `--device`: Device to use [auto|cuda|mps|cpu] (default: auto)
+- `--save-viz`: Save prediction visualizations
+- `--n-viz`: Number of samples to visualize (default: 3)
+- `--output-dir`: Output directory (default: evaluation_results)
+
+### Example Output
+
+```
+================================================================================
+NEURAL OPERATOR MODEL EVALUATION
+================================================================================
+
+Loading checkpoint from: checkpoints/best_model.pt
+✓ Model loaded successfully
+  Device: mps
+  Trained for 500 epochs
+  Checkpoint test loss: 0.028456
+
+Loading test data...
+  Resolution: 32x32
+  Test samples: 100
+✓ Data loaded successfully
+
+Running evaluation...
+
+================================================================================
+EVALUATION RESULTS
+================================================================================
+Metric                              Value             Std
+--------------------------------------------------------------------------------
+Loss                             0.027845                
+Relative L2 Error                0.084532        0.012345
+Max Pointwise Error              0.156789                
+Mean Absolute Error              0.012456        0.002134
+RMSE                             0.021345                
+R² Score                         0.987654                
+================================================================================
+
+Number of test samples: 100
+Average relative L2 error: 0.0845 ± 0.0123
+
+Generating visualizations...
+  Saved visualization: evaluation_results/visualizations/prediction_sample_1.png
+  Saved visualization: evaluation_results/visualizations/prediction_sample_2.png
+  Saved visualization: evaluation_results/visualizations/prediction_sample_3.png
+  Saved results: evaluation_results/evaluation_metrics.json
+
+================================================================================
+Evaluation completed! Results saved to: evaluation_results
+================================================================================
+```
+
+### Metrics Explained
+
+- **Relative L2 Error**: `||pred - true||₂ / ||true||₂` (lower is better)
+- **Max Pointwise Error**: Maximum absolute difference at any point
+- **MAE**: Mean Absolute Error across all points
+- **RMSE**: Root Mean Squared Error
+- **R² Score**: Coefficient of determination (closer to 1 is better)
+
 ## Configuration Options
 
 Key hyperparameters in [src/config.py](src/config.py):

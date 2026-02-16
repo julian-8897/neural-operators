@@ -16,11 +16,13 @@ def get_darcy_flow_dataloaders(config, eval_resolution: int | None = None):
     """
     # Load the built-in Darcy Flow dataset
     # This automatically downloads and caches the dataset
+    # NOTE: n_tests and test_batch_sizes must match length of test_resolutions
+    n_resolutions = len(config.test_resolutions)
     train_loader, test_loaders, data_processor = load_darcy_flow_small(
         n_train=config.train_samples,
-        n_tests=[config.test_samples],
+        n_tests=[config.test_samples] * n_resolutions,  # Repeat for each resolution
         batch_size=config.batch_size,
-        test_batch_sizes=[config.test_batch_size],
+        test_batch_sizes=[config.test_batch_size] * n_resolutions,  # Repeat for each resolution
         test_resolutions=config.test_resolutions,
     )
 

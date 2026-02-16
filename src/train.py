@@ -44,6 +44,14 @@ def train_darcy_flow(config=None):
     print(f"Training samples: {config.train_samples}")
     print(f"Test samples: {config.test_samples}")
     print("Available test resolutions (config):", config.test_resolutions)
+    print("Loaded test resolutions:", list(test_loaders.keys()))
+
+    # Ensure eval_resolution exists in test_loaders
+    if config.eval_resolution not in test_loaders:
+        available_res = list(test_loaders.keys())[0]
+        print(f"Warning: eval_resolution {config.eval_resolution} not in test_loaders.")
+        print(f"Using first available resolution: {available_res}")
+        config.eval_resolution = available_res
 
     # Create model
     print("\nCreating FNO model...")
@@ -105,17 +113,38 @@ def train_darcy_flow(config=None):
     print("Training completed!")
     print("=" * 80)
 
-    # Save the trained model
+    # Save the trained model with comprehensive checkpoint info
     print("\nSaving models...")
+
+    # Get final test loss
+    model.eval()
+    test_loss = 0.0
+    n_samples = 0
+    with torch.no_grad():
+        for batch in test_loaders[config.eval_resolution]:
+            batch = data_processor.preprocess(batch, batched=True)
+            x = batch["x"].to(device)
+            y = batch["y"].to(device)
+            pred = model(x)
+            loss = train_loss(pred, y)
+            test_loss += loss.item() * x.size(0)
+            n_samples += x.size(0)
+    test_loss /= n_samples
+
+    # Save best model checkpoint
     best_model_path = config.save_dir / "best_model.pt"
     torch.save(
         {
             "model_state_dict": trainer.model.state_dict(),
             "config": config,
+            "epoch": config.epochs,
+            "test_loss": test_loss,
+            "model_params": count_model_params(model),
         },
         best_model_path,
     )
-    print(f"Model saved to: {best_model_path}")
+    print(f"✓ Best model saved to: {best_model_path}")
+    print(f"  Final test loss: {test_loss:.6f}")
 
     # Visualize a test sample
     print("\nGenerating visualization...")

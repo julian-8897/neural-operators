@@ -29,7 +29,7 @@ class DarcyFlowConfig:
     n_layers: int = 4
 
     # Training parameters
-    epochs: int = 1
+    epochs: int = 100
     learning_rate: float = 1e-3
     scheduler_step: int = 100
     scheduler_gamma: float = 0.5
